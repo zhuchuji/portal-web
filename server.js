@@ -12,7 +12,7 @@ app.use(express.static('build', {
   }
 }));
 
-app.use('/api', createProxyMiddleware({ target: 'localhost:9090', changeOrigin: true }));
+app.use('/api', createProxyMiddleware({ target: 'http://localhost:9090', changeOrigin: true }));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, './build/index.html'));
