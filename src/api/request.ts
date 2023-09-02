@@ -14,16 +14,10 @@ class ApiRequest {
   }
 
   public request<Data, Param>(config: RequestConfig) {
-    const { onCancel, ...axiosConfig } = config;
-    const mergedConfig: AxiosRequestConfig = axiosConfig;
-    if (typeof onCancel === 'function') {
-      const source = axios.CancelToken.source();
-      mergedConfig.cancelToken = source.token;
-    }
-    return this.axiosInstance.request(mergedConfig);
+    return this.axiosInstance.request(config);
   }
 }
 
-const request = new ApiRequest();
+const apiRequest = new ApiRequest();
 
-export default request;
+export default apiRequest;

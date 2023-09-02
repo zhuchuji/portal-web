@@ -157,6 +157,7 @@ const Preview: React.FC<PreviewProps> = ({
             arrows={true}
             prevArrow={<CaretLeftOutlined />}
             nextArrow={<CaretRightOutlined />}
+            afterChange={(currentSlide) => setSelectedImageIndex(currentSlide)}
           >
             {imageInfos.map(({ data }, index) => (
               <Image key={index} src={data} />
