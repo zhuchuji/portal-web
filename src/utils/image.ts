@@ -13,7 +13,7 @@ export const urlToBase64String = async (url: string): Promise<string> => {
 }
 
 export const base64StringToBlob = (base64String: string, mimeType: string): Blob => {
-  const byteCharacters = window.atob(base64String);
+  const byteCharacters = window.atob(base64String.split('base64,')[1]);
   const byteNumbers = new Array(byteCharacters.length);
 
   for (let i = 0; i < byteCharacters.length; i += 1) {
