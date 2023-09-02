@@ -1,10 +1,16 @@
-export const fileToBase64String = (file: File): Promise<string> =>
+export const fileToBase64String = (file: Blob): Promise<string> =>
 new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onload = () => resolve(reader.result as string);
   reader.onerror = (error) => reject(error);
 });
+
+export const urlToBase64String = async (url: string): Promise<string> => {
+  const res = await window.fetch(url);
+  const blob = await res.blob();
+  return fileToBase64String(blob);
+}
 
 export const base64StringToBlob = (base64String: string, mimeType: string): Blob => {
   const byteCharacters = window.atob(base64String);

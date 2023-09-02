@@ -21,6 +21,7 @@ import coach from "./images/coach.jpg";
 import coastline from "./images/coastline.jpg";
 import sunshineGrassland from "./images/sunshine_grassland.jpg";
 import { ImageInfo } from "./types";
+import { base64StringToBlob, downloadImage } from '../../utils/image';
 
 const Image = styled.img`
   width: 100%;
@@ -94,7 +95,7 @@ const scenes = [
 interface PreviewProps {
   imageInfos: ImageInfo[];
   onCancel: () => void;
-  onConfirm: (scene: number) => void;
+  onConfirm: (data: { base64Image: string; scene: number; }) => void;
 }
 
 const Preview: React.FC<PreviewProps> = ({
@@ -103,6 +104,7 @@ const Preview: React.FC<PreviewProps> = ({
   onConfirm,
 }) => {
   const [selectedScene, setSelectedScene] = useState<number>(scenes[0].id);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(2);
 
   const tabs: TabsProps["items"] = [
     {
@@ -139,12 +141,19 @@ const Preview: React.FC<PreviewProps> = ({
     },
   ];
 
+  const download = () => {
+    const { data, mimeType } = imageInfos[selectedImageIndex];
+    const blob = base64StringToBlob(data, mimeType);
+    downloadImage(blob);
+  }
+
   return (
     <Row style={{ width: "90%", minWidth: "1000px" }} gutter={40}>
       <Col span={16} style={{ overflow: "auto", maxHeight: "100%" }}>
         <Title>选择结果</Title>
         <CarouselWrapper>
           <Carousel
+            initialSlide={selectedImageIndex}
             arrows={true}
             prevArrow={<CaretLeftOutlined />}
             nextArrow={<CaretRightOutlined />}
@@ -156,7 +165,7 @@ const Preview: React.FC<PreviewProps> = ({
         </CarouselWrapper>
 
         <Space wrap style={{ marginBottom: "20px" }}>
-          <Button>下载所选图片</Button>
+          <Button onClick={download}>下载所选图片</Button>
           <Button onClick={onCancel}>不满意，重新调整</Button>
         </Space>
         <div>
@@ -164,7 +173,7 @@ const Preview: React.FC<PreviewProps> = ({
             block
             type="primary"
             onClick={() => {
-              onConfirm(selectedScene);
+              onConfirm({ base64Image: imageInfos[selectedImageIndex].data, scene: selectedScene });
             }}
           >
             开始生成
