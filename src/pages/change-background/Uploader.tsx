@@ -23,7 +23,7 @@ const Uploader: React.FC<UploaderProps> = ({ onChangeImage }) => {
   const [officialImages, setOfficialImages] = useState<string[]>([]);
 
   useEffect(() => {
-    Promise.all([urlToBase64String(perfume), urlToBase64String(bag), urlToBase64String(cup)]).then(images => {
+    Promise.all([ urlToBase64String(cup), urlToBase64String(perfume), urlToBase64String(bag)]).then(images => {
       setOfficialImages(images);
     })
   }, []);
