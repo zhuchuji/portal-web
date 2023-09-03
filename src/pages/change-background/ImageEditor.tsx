@@ -45,7 +45,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         <Close onClick={onDelete} />
       </ImageWrapper>
       <Paragraph style={{ marginTop: '10px' }}>鼠标点击要保留的物体，或输入文字描述你想保留的内容主体</Paragraph>
-      <Input placeholder="输入文字描述你想保留的内容主体，如香水，杯子等" onChange={(e) => { setText(e.target.value); }}/>
+      <Input placeholder="输入文字描述你想保留的内容主体，如香水，杯子等" value={text} onChange={(e) => { setText(e.target.value); }}/>
       <Button block type="primary" style={{ marginTop: '10px' }} size="large" onClick={() => onSubmit(text)}>开始识别</Button>
     </div>
   );

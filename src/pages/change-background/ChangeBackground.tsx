@@ -39,6 +39,7 @@ const ChangeBackground: React.FC = () => {
       message.error("请先上传图片！");
     } else {
       setLoading(true);
+      cachedText.current = text;
       abortController.current = new AbortController();
       try {
         const data = await apiRequest.request<ExtractApiResponseData>({
@@ -58,9 +59,8 @@ const ChangeBackground: React.FC = () => {
               }))
           );
           cachedImages.current = data;
-          cachedText.current = text;
+          setProgress(Progress.Preview);
         }
-        setProgress(Progress.Preview);
       } finally {
         setLoading(false);
       }
