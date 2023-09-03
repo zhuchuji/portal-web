@@ -24,16 +24,18 @@ const Close = styled(CloseSquareTwoTone)`
 
 interface ImageEditorProps {
   imageData: string;
+  initialText: string;
   onDelete: () => void;
   onSubmit: (text: string) => void;
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({
   imageData,
+  initialText,
   onDelete,
   onSubmit,
 }) => {
-  const [text, setText] = useState<string>('');
+  const [text, setText] = useState<string>(initialText);
 
   return (
     <div>

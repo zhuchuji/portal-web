@@ -3,11 +3,11 @@ import { styled } from "styled-components";
 import Uploader from "./Uploader";
 import ImageEditor from "./ImageEditor";
 import Processing from "./Processing";
-import Preview from "./Preview";
+import Preview, { ConfirmCallback } from "./Preview";
 import Result from "./Result";
-import { ImageInfo } from "./types";
+import { ImageInfo, ExtractApiResponseData } from "./types";
 import { message } from "antd";
-import apiRequest from "../../api/request";
+import apiRequest from "../../utils/request";
 
 const Wrapper = styled.div`
   width: 100%;
@@ -31,7 +31,8 @@ const ChangeBackground: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [progress, setProgress] = useState<Progress>(Progress.Upload);
   const abortController = useRef<AbortController>();
-  const cachedImages = useRef<{ masks: string[], blended_images: string[] }>({ masks: [], blended_images: [] });
+  const cachedImages = useRef<ExtractApiResponseData>({ masks: [], blended_images: [], images: [] });
+  const cachedText = useRef<string>('');
 
   const extract = async (text: string) => {
     if (sourceImageInfo == null) {
@@ -40,7 +41,7 @@ const ChangeBackground: React.FC = () => {
       setLoading(true);
       abortController.current = new AbortController();
       try {
-        const response = await apiRequest.request({
+        const data = await apiRequest.request<ExtractApiResponseData>({
           method: 'post',
           url: "/api/v1/predict",
           data: {
@@ -49,15 +50,16 @@ const ChangeBackground: React.FC = () => {
           },
           signal: abortController.current.signal,
         });
-        setPreviewImageInfos(
-          response.data.data.masks
-            .slice(0, response.data.data.masks.length - 1)
-            .map((imageData: string) => ({
-              mimeType: sourceImageInfo.mimeType,
-              data: `data:${sourceImageInfo.mimeType};base64,${imageData}`,
-            }))
-        );
-        cachedImages.current = response.data.data;
+        if (data) {
+          setPreviewImageInfos(
+            data.images.map((imageData: string) => ({
+                mimeType: sourceImageInfo.mimeType,
+                data: `data:${sourceImageInfo.mimeType};base64,${imageData}`,
+              }))
+          );
+          cachedImages.current = data;
+          cachedText.current = text;
+        }
         setProgress(Progress.Preview);
       } finally {
         setLoading(false);
@@ -73,35 +75,36 @@ const ChangeBackground: React.FC = () => {
     }
   };
 
-  const generate = async ({
-    base64Image,
+  const generate: ConfirmCallback = async ({
+    imageIndex,
     scene,
-  }: {
-    base64Image: string;
-    scene: number;
   }) => {
     if (previewImageInfos.length > 0) {
       setLoading(true);
       abortController.current = new AbortController();
       try {
-        const response = await apiRequest.request({
+        const data = await apiRequest.request<string[]>({
           method: 'post',
           url: "/api/v1/img2img",
           data: {
-            mask: base64Image,
+            mask: cachedImages.current.masks[imageIndex],
             blended_images: cachedImages.current.blended_images,
             masks: cachedImages.current.masks,
+            images: cachedImages.current.images,
+            index: imageIndex,
             scene,
           },
           signal: abortController.current.signal,
         });
-        setResultImageInfos(
-          response.data.data.map((base64String: string) => ({
-            mimeType: previewImageInfos[0].mimeType,
-            data: `data:${previewImageInfos[0].mimeType};base64,${base64String}`,
-          }))
-        );
-        setProgress(Progress.Result);
+        if (data) {
+          setResultImageInfos(
+            data.map((base64String: string) => ({
+              mimeType: previewImageInfos[0].mimeType,
+              data: `data:${previewImageInfos[0].mimeType};base64,${base64String}`,
+            }))
+          );
+          setProgress(Progress.Result);
+        }
       } finally {
         setLoading(false);
       }
@@ -116,6 +119,7 @@ const ChangeBackground: React.FC = () => {
             <Content>
               <ImageEditor
                 imageData={sourceImageInfo.data}
+                initialText={cachedText.current}
                 onDelete={() => {
                   setSourceImageInfo(undefined);
                 }}

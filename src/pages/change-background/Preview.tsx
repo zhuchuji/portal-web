@@ -92,10 +92,12 @@ const scenes = [
   },
 ];
 
+export type ConfirmCallback = (data: { imageIndex: number; scene: number; }) => Promise<void>;
+
 interface PreviewProps {
   imageInfos: ImageInfo[];
   onCancel: () => void;
-  onConfirm: (data: { base64Image: string; scene: number; }) => void;
+  onConfirm: ConfirmCallback;
 }
 
 const Preview: React.FC<PreviewProps> = ({
@@ -104,7 +106,7 @@ const Preview: React.FC<PreviewProps> = ({
   onConfirm,
 }) => {
   const [selectedScene, setSelectedScene] = useState<number>(scenes[0].id);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(2);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
 
   const tabs: TabsProps["items"] = [
     {
@@ -174,7 +176,7 @@ const Preview: React.FC<PreviewProps> = ({
             block
             type="primary"
             onClick={() => {
-              onConfirm({ base64Image: imageInfos[selectedImageIndex].data, scene: selectedScene });
+              onConfirm({ imageIndex: selectedImageIndex, scene: selectedScene });
             }}
           >
             开始生成
