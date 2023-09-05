@@ -2,7 +2,7 @@ import { Typography } from "antd";
 import { styled } from "styled-components";
 
 const StyledTitle = styled(Typography.Title)`
-  margin-bottom: 40px !important;
+  margin-bottom: 20px !important;
   text-align: center;
 `;
 

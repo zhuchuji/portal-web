@@ -13,7 +13,7 @@ import {
   CaretRightOutlined,
 } from "@ant-design/icons";
 import type { TabsProps } from "antd";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { styled } from "styled-components";
 import Title from "./Title";
 import beachSunset from "./images/beach_sunset.jpg";
@@ -22,14 +22,11 @@ import coastline from "./images/coastline.jpg";
 import sunshineGrassland from "./images/sunshine_grassland.jpg";
 import { ImageInfo } from "./types";
 import { base64StringToBlob, downloadImage } from '../../utils/image';
-
-const Image = styled.img`
-  width: 100%;
-`;
+import { Image } from './style';
 
 const ListWrapper = styled.div`
   overflow: auto;
-  height: 300px;
+  max-height: 400px;
 `;
 
 const ListItem = styled.div`
@@ -58,13 +55,6 @@ const CarouselWrapper = styled.div`
     z-index: 2;
     color: #ccc;
   }
-`;
-
-const ThemeImage = styled.img<{ active: boolean }>`
-  width: 100%;
-  border: 4px solid;
-  border-radius: 4px;
-  border-color: ${(props) => (props.active ? "#ffd666" : "transparent")};
 `;
 
 const { Paragraph } = Typography;
@@ -119,7 +109,7 @@ const Preview: React.FC<PreviewProps> = ({
             dataSource={scenes}
             renderItem={(item) => (
               <ListItem key={item.id}>
-                <ThemeImage
+                <Image
                   src={item.imageUrl}
                   active={selectedScene === item.id}
                   onClick={() => setSelectedScene(item.id)}
@@ -150,7 +140,7 @@ const Preview: React.FC<PreviewProps> = ({
   }
 
   return (
-    <Row style={{ width: "90%", minWidth: "1000px" }} gutter={40}>
+    <Row style={{ width: "80%", minWidth: "900px" }} gutter={40}>
       <Col span={16} style={{ overflow: "auto", maxHeight: "100%" }}>
         <Title>选择结果</Title>
         <CarouselWrapper>
@@ -162,7 +152,7 @@ const Preview: React.FC<PreviewProps> = ({
             afterChange={(currentSlide) => setSelectedImageIndex(currentSlide)}
           >
             {imageInfos.map(({ data }, index) => (
-              <Image key={index} src={data} />
+              <img style={{ width: '100%' }} key={index} src={data} />
             ))}
           </Carousel>
         </CarouselWrapper>
