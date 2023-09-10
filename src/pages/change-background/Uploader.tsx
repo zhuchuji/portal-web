@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Upload, Row, Col, Typography, List } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import { RcFile } from "antd/es/upload";
-import Title from "./Title";
+import Title from "../../components/Title";
 import { ImageInfo } from "./types";
 import { fileToBase64String, urlToBase64String } from "../../utils/image";
 import { Image } from "./style";

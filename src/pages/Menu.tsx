@@ -22,6 +22,11 @@ const SidebarMenu = () => {
           icon: <FileImageOutlined />,
           label: <NavLink to={routes.ChangeBackground}>换背景</NavLink>,
         },
+        {
+          key: routes.GeneratePoster,
+          icon: <FileImageOutlined />,
+          label: <NavLink to={routes.GeneratePoster}>海报生成</NavLink>,
+        },
       ]}
     />
   );

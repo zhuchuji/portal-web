@@ -2,7 +2,7 @@ import { Button, Space, Row, Col, List } from "antd";
 import { useState } from "react";
 import { styled } from "styled-components";
 import { ImageInfo } from "./types";
-import Title from './Title';
+import Title from '../../components/Title';
 import { base64StringToBlob, downloadImage } from "../../utils/image";
 
 const ListItem = styled.div`

@@ -15,7 +15,7 @@ import {
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import { styled } from "styled-components";
-import Title from "./Title";
+import Title from "../../components/Title";
 import beachSunset from "./images/beach_sunset.jpg";
 import coach from "./images/coach.jpg";
 import coastline from "./images/coastline.jpg";

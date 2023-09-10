@@ -2,7 +2,7 @@ import { styled } from 'styled-components';
 import { CloseSquareTwoTone } from '@ant-design/icons';
 import { Typography, Input, Button } from 'antd';
 import { useState } from 'react';
-import Title from './Title';
+import Title from '../../components/Title';
 
 const { Paragraph } = Typography;
 
