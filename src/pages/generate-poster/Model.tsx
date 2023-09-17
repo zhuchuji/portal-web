@@ -1,15 +1,22 @@
-import { useRef, useEffect } from 'react';
-import Konva from 'konva';
-import { Image, Transformer } from 'react-konva';
+import { useRef, useEffect } from "react";
+import Konva from "konva";
+import { Image, Transformer, Group, Text } from "react-konva";
 
-interface ModelImageProps {
+interface ModelProps {
   imageConfig: Konva.ImageConfig;
   isSelected: boolean;
   onSelect: (shapeId: string | undefined) => void;
   onChange: (imageConfig: Konva.ImageConfig) => void;
+  onDelete: (shapeId: string) => void;
 }
 
-const ModelImage: React.FC<ModelImageProps> = ({ imageConfig, isSelected, onSelect, onChange }) => {
+const Model: React.FC<ModelProps> = ({
+  imageConfig,
+  isSelected,
+  onSelect,
+  onChange,
+  onDelete,
+}) => {
   const shapeRef = useRef<Konva.Image>(null);
   const trRef = useRef<Konva.Transformer>(null);
 
@@ -21,8 +28,21 @@ const ModelImage: React.FC<ModelImageProps> = ({ imageConfig, isSelected, onSele
     }
   }, [isSelected]);
 
+
   return (
-    <>
+    <Group>
+      <Text
+        text="x"
+        fontSize={20}
+        fill='#ccc'
+        x={(imageConfig.x || 0) + ((imageConfig.image as HTMLImageElement).width || 0) + 10}
+        y={(imageConfig.y || 0) - 30}
+        onClick={() => {
+          if (imageConfig.id) {
+            onDelete(imageConfig.id);
+          }
+        }}
+      />
       <Image
         {...imageConfig}
         onMouseDown={() => onSelect(imageConfig.id)}
@@ -72,8 +92,8 @@ const ModelImage: React.FC<ModelImageProps> = ({ imageConfig, isSelected, onSele
           }}
         />
       )}
-    </>
+    </Group>
   );
 };
 
-export default ModelImage;
+export default Model;

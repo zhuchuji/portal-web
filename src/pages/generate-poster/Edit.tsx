@@ -1,11 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { Stage, Layer, Line, Image, Transformer } from "react-konva";
 import Konva from "konva";
-import { Radio, Select, Form, InputNumber, Tabs, List, Row, Col } from "antd";
-import { styled } from "styled-components";
+import {
+  Radio,
+  Select,
+  Form,
+  InputNumber,
+  Tabs,
+  List,
+  Row,
+  Col,
+  Button,
+} from "antd";
 import Title from "../../components/Title";
 import ImageSelection from "../../components/ImageSelection";
-import ModelImage from "./ModelImage";
+import ModelImage from "./Model";
 
 import jeepWrangler1 from "./images/jeep-wrangler-1.png";
 import jeepWrangler2 from "./images/jeep-wrangler-2.png";
@@ -15,6 +24,7 @@ import jeepWrangler5 from "./images/jeep-wrangler-5.png";
 import jeepWrangler6 from "./images/jeep-wrangler-6.png";
 import jeepWrangler7 from "./images/jeep-wrangler-7.png";
 import jeepWrangler8 from "./images/jeep-wrangler-8.png";
+
 
 enum ToolType {
   Pen,
@@ -62,9 +72,15 @@ const jeepWranglers = [
 
 let shapeId = 0;
 
-const Edit: React.FC = () => {
-  const [canvasWidth, setCanvasWidth] = useState<number>(800);
-  const [canvasHeight, setCanvasHeight] = useState<number>(600);
+interface EditProps {
+  onNext: (image: string) => void;
+}
+
+const Edit: React.FC<EditProps> = ({ onNext }) => {
+  const [renderedWidth, setRenderedWidth] = useState<number>(800);
+  const [renderedHeight, setRenderedHeight] = useState<number>(600);
+  const [realWidth, setRealWidth] = useState<number>(800);
+  const [realHeight, setRealHeight] = useState<number>(600);
   const [aspectRatio, setAspectRatio] = useState<number>(4 / 3);
   const [lines, setLines] = useState<Konva.LineConfig[]>([]);
   const [images, setImages] = useState<Konva.ImageConfig[]>([]);
@@ -73,28 +89,33 @@ const Edit: React.FC = () => {
   const isDrawing = useRef<boolean>(false);
   const draggingImage = useRef<HTMLImageElement>();
   const stageRef = useRef<Konva.Stage>(null);
+  const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     if (stageRef.current) {
       stageRef.current.content.tabIndex = 1;
       stageRef.current.content.style.outline = "none";
-      const deleteImage = (e: KeyboardEvent) => {
+      const handleDelete = (e: KeyboardEvent) => {
         if (e.key === "Backspace" && selectedShapeId) {
-          const originalImageIndex = images.findIndex(
-            (image) => image.id === selectedShapeId
-          );
-          images.splice(originalImageIndex, 1);
-          setImages([...images]);
-          setSelectedShapeId(undefined);
+          deleteImage(selectedShapeId);
         }
       };
-      stageRef.current.content.addEventListener("keydown", deleteImage);
+      stageRef.current.content.addEventListener("keydown", handleDelete);
 
       return () => {
-        stageRef.current?.content.removeEventListener("keydown", deleteImage);
+        stageRef.current?.content.removeEventListener("keydown", handleDelete);
       };
     }
   }, [stageRef, selectedShapeId]);
+
+  const deleteImage = (shapeId: string) => {
+    const originalImageIndex = images.findIndex(
+      (image) => image.id === shapeId
+    );
+    images.splice(originalImageIndex, 1);
+    setImages([...images]);
+    setSelectedShapeId(undefined);
+  };
 
   const handleMouseDown = (e: Konva.KonvaPointerEvent) => {
     if (e.target === e.currentTarget) {
@@ -134,26 +155,32 @@ const Edit: React.FC = () => {
     isDrawing.current = false;
   };
 
-  const changeCanvasWidth = (width: number | null) => {
-    if (width) {
-      const height = Math.round(width / aspectRatio);
-      setCanvasWidth(width);
-      setCanvasHeight(height);
+  const changeCanvasWidth = (realWidth: number | null) => {
+    if (realWidth) {
+      setRealWidth(realWidth);
+      const realHeight = Math.round(realWidth / aspectRatio);
+      setRealHeight(realHeight);
+      const renderedHeight = Math.round(renderedWidth / aspectRatio);
+      setRenderedHeight(renderedHeight);
     }
   };
 
-  const changeCanvasHeight = (height: number | null) => {
-    if (height) {
-      const width = Math.round(height * aspectRatio);
-      setCanvasWidth(width);
-      setCanvasHeight(height);
+  const changeCanvasHeight = (realHeight: number | null) => {
+    if (realHeight) {
+      setRealHeight(realHeight);
+      const realWidth = Math.round(realHeight * aspectRatio);
+      setRealWidth(realWidth);
+      const renderedHeight = Math.round(renderedWidth / aspectRatio);
+      setRenderedHeight(renderedHeight);
     }
   };
 
   const changeCanvasAspectRatio = (ratio: number) => {
-    const height = Math.round(canvasWidth / ratio);
-    setCanvasHeight(height);
     setAspectRatio(ratio);
+    const realHeight = Math.round(realWidth / ratio);
+    const renderedHeight = Math.round(renderedWidth / ratio);
+    setRealHeight(realHeight);
+    setRenderedHeight(renderedHeight);
   };
 
   const changeImage = (imageConfig: Konva.ImageConfig) => {
@@ -175,7 +202,7 @@ const Edit: React.FC = () => {
       label: "牧马人",
       children: (
         <List
-          style={{ maxHeight: '600px', overflow: 'auto' }}
+          style={{ maxHeight: "600px", overflow: "auto" }}
           dataSource={jeepWranglers}
           renderItem={(item) => (
             <ImageSelection
@@ -185,6 +212,8 @@ const Edit: React.FC = () => {
               draggable
               onDragStart={(e) => {
                 draggingImage.current = e.currentTarget;
+                dragOffset.current.x = e.nativeEvent.offsetX;
+                dragOffset.current.y = e.nativeEvent.offsetY;
               }}
             />
           )}
@@ -193,122 +222,141 @@ const Edit: React.FC = () => {
     },
   ];
 
+  const handleNext = () => {
+    const image = stageRef.current?.toDataURL();
+    if (image) {
+      onNext(image);
+    }
+  };
+
   return (
     <>
       <Title>请选择你的画布与布局</Title>
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <Row style={{ width: "90%", minWidth: '900px' }} gutter={40}>
+        <Row style={{ width: "90%", minWidth: "900px" }} gutter={40}>
           <Col span={16} style={{ borderRight: "1px solid #ccc" }}>
-            <div
-              style={{ display: "flex" }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={async (e) => {
-                e.preventDefault();
-                if (stageRef.current && draggingImage.current) {
-                  stageRef.current.setPointersPositions(e);
-                  const position = stageRef.current.getPointerPosition();
-                  const imageConfig: Konva.ImageConfig = {
-                    id: String(shapeId++),
-                    image: draggingImage.current,
-                    offset: {
-                      x: draggingImage.current.width / 2,
-                      y: draggingImage.current.height / 2,
-                    },
-                    ...(position ? position : {}),
-                  };
-                  setImages(images.concat(imageConfig));
-                }
-              }}
-            >
-              <Stage
-                style={{ border: "1px solid #ccc" }}
-                width={canvasWidth}
-                height={canvasHeight}
-                onMouseDown={handleMouseDown}
-                onMousemove={handleMouseMove}
-                onMouseup={handleMouseUp}
-                ref={stageRef}
-              >
-                <Layer>
-                  {images.map((imageConfig) => (
-                    <ModelImage
-                      key={imageConfig.id}
-                      imageConfig={imageConfig}
-                      onSelect={(id) => setSelectedShapeId(id)}
-                      isSelected={selectedShapeId === imageConfig.id}
-                      onChange={changeImage}
-                    />
-                  ))}
-                  {lines.map((line, i) => (
-                    <Line
-                      key={i}
-                      points={line.points}
-                      stroke="#999"
-                      strokeWidth={5}
-                      tension={0.5}
-                      lineCap="round"
-                      lineJoin="round"
-                      globalCompositeOperation={
-                        line.tool === ToolType.Eraser
-                          ? "destination-out"
-                          : "source-over"
-                      }
-                    />
-                  ))}
-                </Layer>
-              </Stage>
-            </div>
-            <Form layout="inline" style={{ marginTop: "20px" }}>
-              <Form.Item label="比例">
-                <Select
-                  style={{ width: "150px" }}
-                  defaultValue={aspectRatio}
-                  onChange={changeCanvasAspectRatio}
-                  options={[
-                    { value: 1 / 1, label: "1 : 1" },
-                    { value: 3 / 2, label: "3 : 2" },
-                    { value: 2 / 3, label: "2 : 3" },
-                    { value: 4 / 3, label: "4 : 3" },
-                    { value: 3 / 4, label: "3 : 4" },
-                    { value: 16 / 9, label: "16 : 9" },
-                    { value: 9 / 16, label: "9 : 16" },
-                    { value: -1, label: "自定义" },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item label="宽度">
-                <InputNumber
-                  value={canvasWidth}
-                  min={200}
-                  max={2000}
-                  onChange={changeCanvasWidth}
-                />
-              </Form.Item>
-              <Form.Item label="高度">
-                <InputNumber
-                  value={canvasHeight}
-                  min={200}
-                  max={2000}
-                  onChange={changeCanvasHeight}
-                />
-              </Form.Item>
-            </Form>
-            <Form layout="inline" style={{ marginTop: "20px" }}>
-              <Form.Item label="工具">
-                <Radio.Group
-                  onChange={(e) => setTool(e.target.value)}
-                  value={tool}
+            <div style={{ display: "flex", justifyContent: 'center' }}>
+              <div>
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    if (stageRef.current && draggingImage.current) {
+                      stageRef.current.setPointersPositions(e);
+                      const position = stageRef.current.getPointerPosition();
+                      const imageConfig: Konva.ImageConfig = {
+                        id: String(shapeId++),
+                        image: draggingImage.current,
+                        ...(position
+                          ? {
+                              x: position.x - dragOffset.current.x,
+                              y: position.y - dragOffset.current.y,
+                            }
+                          : {}),
+                      };
+                      setImages(images.concat(imageConfig));
+                    }
+                  }}
                 >
-                  <Radio value={ToolType.Pen}>画笔</Radio>
-                  <Radio value={ToolType.Eraser}>擦除</Radio>
-                </Radio.Group>
-              </Form.Item>
-            </Form>
+                  <Stage
+                    style={{ border: "1px solid #ccc" }}
+                    width={renderedWidth}
+                    height={renderedHeight}
+                    onMouseDown={handleMouseDown}
+                    onMousemove={handleMouseMove}
+                    onMouseup={handleMouseUp}
+                    ref={stageRef}
+                  >
+                    <Layer>
+                      {images.map((imageConfig) => (
+                        <ModelImage
+                          key={imageConfig.id}
+                          imageConfig={imageConfig}
+                          onSelect={(id) => setSelectedShapeId(id)}
+                          isSelected={selectedShapeId === imageConfig.id}
+                          onChange={changeImage}
+                          onDelete={(shapeId) => deleteImage(shapeId)}
+                        />
+                      ))}
+                      {lines.map((line, i) => (
+                        <Line
+                          key={i}
+                          points={line.points}
+                          stroke="#999"
+                          strokeWidth={5}
+                          tension={0.5}
+                          lineCap="round"
+                          lineJoin="round"
+                          globalCompositeOperation={
+                            line.tool === ToolType.Eraser
+                              ? "destination-out"
+                              : "source-over"
+                          }
+                        />
+                      ))}
+                    </Layer>
+                  </Stage>
+                </div>
+                <Form layout="inline" style={{ marginTop: "20px" }}>
+                  <Form.Item label="比例">
+                    <Select
+                      style={{ width: "150px" }}
+                      defaultValue={aspectRatio}
+                      onChange={changeCanvasAspectRatio}
+                      options={[
+                        { value: 1 / 1, label: "1 : 1" },
+                        { value: 3 / 2, label: "3 : 2" },
+                        { value: 2 / 3, label: "2 : 3" },
+                        { value: 4 / 3, label: "4 : 3" },
+                        { value: 3 / 4, label: "3 : 4" },
+                        { value: 16 / 9, label: "16 : 9" },
+                        { value: 9 / 16, label: "9 : 16" },
+                        { value: -1, label: "自定义" },
+                      ]}
+                    />
+                  </Form.Item>
+                  <Form.Item label="宽度">
+                    <InputNumber
+                      value={realWidth}
+                      min={200}
+                      max={2000}
+                      onChange={changeCanvasWidth}
+                    />
+                  </Form.Item>
+                  <Form.Item label="高度">
+                    <InputNumber
+                      value={realHeight}
+                      min={200}
+                      max={2000}
+                      onChange={changeCanvasHeight}
+                    />
+                  </Form.Item>
+                </Form>
+                <Form layout="inline" style={{ marginTop: "20px" }}>
+                  <Form.Item label="工具">
+                    <Radio.Group
+                      onChange={(e) => setTool(e.target.value)}
+                      value={tool}
+                    >
+                      <Radio value={ToolType.Pen}>画笔</Radio>
+                      <Radio value={ToolType.Eraser}>擦除</Radio>
+                    </Radio.Group>
+                  </Form.Item>
+                </Form>
+                <Button
+                  style={{ marginTop: "20px" }}
+                  type="primary"
+                  onClick={handleNext}
+                >
+                  下一步
+                </Button>
+              </div>
+            </div>
           </Col>
           <Col span={8}>
             <p>添加指定元素并拖动到想要的位置</p>
             <Tabs
-              style={{ border: '1px solid #ccc' }}
+              style={{ border: "1px solid #ccc" }}
               items={tabs}
               defaultActiveKey={tabs[1].key}
             />

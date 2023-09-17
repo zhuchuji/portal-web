@@ -6,9 +6,9 @@ import Title from "../../components/Title";
 import { ImageInfo } from "./types";
 import { fileToBase64String, urlToBase64String } from "../../utils/image";
 import { Image } from "./style";
-import perfume from "./images/perfume.jpg";
-import bag from "./images/bag.jpg";
-import cup from "./images/cup.jpg";
+import perfume from "../../assets/images/perfume.jpg";
+import bag from "../../assets/images/bag.jpg";
+import cup from "../../assets/images/cup.jpg";
 
 const { Dragger } = Upload;
 const { Paragraph } = Typography;

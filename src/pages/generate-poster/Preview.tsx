@@ -8,10 +8,7 @@ import {
   Tabs,
   Carousel,
 } from "antd";
-import {
-  CaretLeftOutlined,
-  CaretRightOutlined,
-} from "@ant-design/icons";
+import { CaretLeftOutlined, CaretRightOutlined } from "@ant-design/icons";
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import { styled } from "styled-components";
@@ -20,9 +17,8 @@ import beachSunset from "../../assets/images/beach_sunset.jpg";
 import coach from "../../assets/images/coach.jpg";
 import coastline from "../../assets/images/coastline.jpg";
 import sunshineGrassland from "../../assets/images/sunshine_grassland.jpg";
-import { ImageInfo } from "./types";
-import { base64StringToBlob, downloadImage } from '../../utils/image';
-import { Image } from './style';
+import { base64StringToBlob, downloadImage } from "../../utils/image";
+import ImageSelection from "../../components/ImageSelection";
 
 const ListWrapper = styled.div`
   overflow: auto;
@@ -82,10 +78,13 @@ const scenes = [
   },
 ];
 
-export type ConfirmCallback = (data: { imageIndex: number; scene: number; }) => Promise<void>;
+export type ConfirmCallback = (data: {
+  imageIndex: number;
+  scene: number;
+}) => Promise<void>;
 
 interface PreviewProps {
-  imageInfos: ImageInfo[];
+  imageInfos: any[];
   onCancel: () => void;
   onConfirm: ConfirmCallback;
 }
@@ -109,9 +108,9 @@ const Preview: React.FC<PreviewProps> = ({
             dataSource={scenes}
             renderItem={(item) => (
               <ListItem key={item.id}>
-                <Image
+                <ImageSelection
                   src={item.imageUrl}
-                  active={selectedScene === item.id}
+                  selected={selectedScene === item.id}
                   onClick={() => setSelectedScene(item.id)}
                 />
                 <Paragraph>{item.name}</Paragraph>
@@ -133,57 +132,63 @@ const Preview: React.FC<PreviewProps> = ({
     },
   ];
 
-  const download = () => {
-    const { data, mimeType } = imageInfos[selectedImageIndex];
-    const blob = base64StringToBlob(data, mimeType);
-    downloadImage(blob);
-  }
+  // const download = () => {
+  //   const { data, mimeType } = imageInfos[selectedImageIndex];
+  //   const blob = base64StringToBlob(data, mimeType);
+  //   downloadImage(blob);
+  // }
 
   return (
-    <Row style={{ width: "80%", minWidth: "900px" }} gutter={40}>
-      <Col span={16} style={{ overflow: "auto", maxHeight: "100%" }}>
-        <Title>选择结果</Title>
-        <CarouselWrapper>
-          <Carousel
-            initialSlide={selectedImageIndex}
-            arrows={true}
-            prevArrow={<CaretLeftOutlined />}
-            nextArrow={<CaretRightOutlined />}
-            afterChange={(currentSlide) => setSelectedImageIndex(currentSlide)}
-          >
-            {imageInfos.map(({ data }, index) => (
-              <img style={{ width: '100%' }} key={index} src={data} />
-            ))}
-          </Carousel>
-        </CarouselWrapper>
-
-        <Space wrap style={{ marginBottom: "20px" }}>
-          <Button onClick={download}>下载所选图片</Button>
-          <Button onClick={onCancel}>不满意，重新调整</Button>
-        </Space>
-        <div>
-          <Button
-            block
-            type="primary"
-            onClick={() => {
-              onConfirm({ imageIndex: selectedImageIndex, scene: selectedScene });
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <Row style={{ width: "80%", minWidth: "900px" }} gutter={40}>
+        <Col span={16} style={{ overflow: "auto", maxHeight: "100%" }}>
+          <Title>选择结果</Title>
+          <CarouselWrapper>
+            <Carousel
+              initialSlide={selectedImageIndex}
+              arrows={true}
+              prevArrow={<CaretLeftOutlined />}
+              nextArrow={<CaretRightOutlined />}
+              afterChange={(currentSlide) =>
+                setSelectedImageIndex(currentSlide)
+              }
+            >
+              {imageInfos.map(({ data }, index) => (
+                <img style={{ width: "100%" }} key={index} src={data} />
+              ))}
+            </Carousel>
+          </CarouselWrapper>
+          <Space>
+            <Button
+              type='primary'
+              onClick={() => {
+                onConfirm({
+                  imageIndex: selectedImageIndex,
+                  scene: selectedScene,
+                });
+              }}
+            >
+              开始生成
+            </Button>
+            <Button
+              onClick={onCancel}
+            >
+              上一步
+            </Button>
+          </Space>
+        </Col>
+        <Col span={8} style={{ borderLeft: "1px solid #ccc" }}>
+          <div
+            style={{
+              borderRadius: "4px",
+              border: "1px solid #aaa",
             }}
           >
-            开始生成
-          </Button>
-        </div>
-      </Col>
-      <Col span={8} style={{ borderLeft: "1px solid #ccc" }}>
-        <div
-          style={{
-            borderRadius: "4px",
-            border: "1px solid #aaa",
-          }}
-        >
-          <Tabs items={tabs} style={{ margin: "0 10px" }} />
-        </div>
-      </Col>
-    </Row>
+            <Tabs items={tabs} style={{ margin: "0 10px" }} />
+          </div>
+        </Col>
+      </Row>
+    </div>
   );
 };
 
