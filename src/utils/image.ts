@@ -12,6 +12,16 @@ export const urlToBase64String = async (url: string): Promise<string> => {
   return fileToBase64String(blob);
 }
 
+export const urlToBase64ImageInfo = async (url: string): Promise<{ data: string, mimeType: string }> => {
+  const res = await window.fetch(url);
+  const file = await res.blob();
+  const mimeType = file.type;
+  return {
+    data: await fileToBase64String(file),
+    mimeType,
+  };
+}
+
 export const base64StringToBlob = (base64String: string, mimeType: string): Blob => {
   const byteCharacters = window.atob(base64String.split('base64,')[1]);
   const byteNumbers = new Array(byteCharacters.length);
