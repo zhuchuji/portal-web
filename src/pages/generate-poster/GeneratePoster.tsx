@@ -1,19 +1,53 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Edit from './Edit';
-import Preview from './Preview';
+import Result from './Result';
+import apiRequest from '../../utils/request';
+import { ImageInfo } from '../../utils/image';
+import Processing from '../../components/Processing';
 
 enum Process {
   Edit,
-  Preview,
   Generate,
 }
 const GeneratePoster: React.FC = () => {
   const [process, setProcess] = useState<Process>(Process.Edit);
-  const [image, setImage] = useState<string>();
+  const [generatedImages, setGeneratedImages] = useState<ImageInfo[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const abortController = useRef<AbortController>();
 
-  const toPreview = (image: string) => {
-    setImage(image);
-    setProcess(Process.Preview);
+  const toPreview = async (data: { canvas: ImageInfo; target: ImageInfo; width: number; height: number }) => {
+    abortController.current = new AbortController();
+    try {
+      setLoading(true);
+      const res = await apiRequest.request<string[]>({
+        method: 'post',
+        url: '/api/v1/txt2img',
+        data: {
+          draw_image: data.canvas.data,
+          image: data.target.data,
+          width: data.width,
+          height: data.height,
+        },
+        signal: abortController.current.signal,
+      });
+      if (res) {
+        setGeneratedImages(res.map((imageData: string) => ({
+          data: `data:${data.canvas.mimeType};base64,${imageData}`,
+          mimeType: data.canvas.mimeType,
+        })));
+        setProcess(Process.Generate);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelProcessing = () => {
+    setLoading(false);
+    if (abortController.current) {
+      abortController.current.abort();
+      abortController.current = undefined;
+    }
   };
 
   return (
@@ -23,17 +57,15 @@ const GeneratePoster: React.FC = () => {
           onNext={toPreview}
         />
       )}
-      {process === Process.Preview && (
-        <Preview
-          imageInfos={[]}
-          onCancel={() => {
+      {process === Process.Generate && (
+        <Result
+          imageInfos={generatedImages}
+          onBack={() => {
             setProcess(Process.Edit);
-          }}
-          onConfirm={async () => {
-            setProcess(Process.Generate);
           }}
         />
       )}
+      {loading  && <Processing open={loading} onCancel={cancelProcessing} />}
     </div>
   );
 };

@@ -1,3 +1,8 @@
+export interface ImageInfo {
+  data: string;
+  mimeType: string;
+}
+
 export const fileToBase64String = (file: Blob): Promise<string> =>
 new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -12,7 +17,7 @@ export const urlToBase64String = async (url: string): Promise<string> => {
   return fileToBase64String(blob);
 }
 
-export const urlToBase64ImageInfo = async (url: string): Promise<{ data: string, mimeType: string }> => {
+export const urlToBase64ImageInfo = async (url: string): Promise<ImageInfo> => {
   const res = await window.fetch(url);
   const file = await res.blob();
   const mimeType = file.type;

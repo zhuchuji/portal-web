@@ -1,6 +1,11 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import Konva from "konva";
 import { Image, Transformer, Group, Text } from "react-konva";
+import { message } from "antd";
+
+export interface ModelHandlerProps {
+  toDataURL: () => string | undefined;
+}
 
 interface ModelProps {
   imageConfig: Konva.ImageConfig;
@@ -10,15 +15,25 @@ interface ModelProps {
   onDelete: (shapeId: string) => void;
 }
 
-const Model: React.FC<ModelProps> = ({
+const Model = forwardRef<ModelHandlerProps, ModelProps>(({
   imageConfig,
   isSelected,
   onSelect,
   onChange,
   onDelete,
-}) => {
+}, ref) => {
   const shapeRef = useRef<Konva.Image>(null);
   const trRef = useRef<Konva.Transformer>(null);
+  
+  useImperativeHandle(ref, () => {
+    return {
+      toDataURL() {
+        if (shapeRef.current) {
+          return shapeRef.current.toDataURL();
+        }
+      }
+    }
+  });
 
   useEffect(() => {
     if (isSelected && trRef.current && shapeRef.current) {
@@ -28,21 +43,28 @@ const Model: React.FC<ModelProps> = ({
     }
   }, [isSelected]);
 
-
   return (
     <Group>
-      <Text
-        text="x"
-        fontSize={20}
-        fill='#ccc'
-        x={(imageConfig.x || 0) + ((imageConfig.image as HTMLImageElement).width || 0) + 10}
-        y={(imageConfig.y || 0) - 30}
-        onClick={() => {
-          if (imageConfig.id) {
-            onDelete(imageConfig.id);
+      {isSelected && (
+        <Text
+          text="x"
+          fontSize={20}
+          fill="#ccc"
+          x={
+            (imageConfig.x || 0) +
+            ((imageConfig.image as HTMLImageElement).width || 0) +
+            10
           }
-        }}
-      />
+          y={(imageConfig.y || 0) - 30}
+          onClick={() => {
+            if (imageConfig.id) {
+
+
+              onDelete(imageConfig.id);
+            }
+          }}
+        />
+      )}
       <Image
         {...imageConfig}
         onMouseDown={() => onSelect(imageConfig.id)}
@@ -94,6 +116,6 @@ const Model: React.FC<ModelProps> = ({
       )}
     </Group>
   );
-};
+});
 
 export default Model;

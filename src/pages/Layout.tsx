@@ -12,7 +12,7 @@ import Menu from './Menu';
 const { Header, Sider, Content } = Layout;
 
 const MainLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(() => localStorage.getItem('sidebar-menu-collapsed') === '1' || false);
   const {
     token: { colorBgContainer },
   } = theme.useToken();
@@ -27,7 +27,7 @@ const MainLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={() => { localStorage.setItem('sidebar-menu-collapsed', collapsed ? '0' : '1'); setCollapsed(!collapsed); }}
             style={{
               fontSize: '16px',
               width: 64,

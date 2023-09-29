@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Stage, Layer, Line, Image, Transformer } from "react-konva";
+import { useState, useRef, useEffect, DragEvent } from "react";
+import { Stage, Layer, Line } from "react-konva";
 import Konva from "konva";
 import {
   Radio,
@@ -11,10 +11,11 @@ import {
   Row,
   Col,
   Button,
+  message,
 } from "antd";
 import Title from "../../components/Title";
 import ImageSelection from "../../components/ImageSelection";
-import ModelImage from "./Model";
+import Model, { ModelHandlerProps } from "./Model";
 
 import jeepWrangler1 from "./images/jeep-wrangler-1.png";
 import jeepWrangler2 from "./images/jeep-wrangler-2.png";
@@ -24,7 +25,7 @@ import jeepWrangler5 from "./images/jeep-wrangler-5.png";
 import jeepWrangler6 from "./images/jeep-wrangler-6.png";
 import jeepWrangler7 from "./images/jeep-wrangler-7.png";
 import jeepWrangler8 from "./images/jeep-wrangler-8.png";
-
+import { ImageInfo } from "../../utils/image";
 
 enum ToolType {
   Pen,
@@ -73,47 +74,66 @@ const jeepWranglers = [
 let shapeId = 0;
 
 interface EditProps {
-  onNext: (image: string) => void;
+  onNext: (data: {
+    canvas: ImageInfo;
+    target: ImageInfo;
+    width: number;
+    height: number;
+  }) => void;
 }
 
 const Edit: React.FC<EditProps> = ({ onNext }) => {
-  const [renderedWidth, setRenderedWidth] = useState<number>(800);
-  const [renderedHeight, setRenderedHeight] = useState<number>(600);
+  const [renderedWidth, setRenderedWidth] = useState<number>(0);
+  const [renderedHeight, setRenderedHeight] = useState<number>(0);
   const [realWidth, setRealWidth] = useState<number>(800);
   const [realHeight, setRealHeight] = useState<number>(600);
   const [aspectRatio, setAspectRatio] = useState<number>(4 / 3);
   const [lines, setLines] = useState<Konva.LineConfig[]>([]);
-  const [images, setImages] = useState<Konva.ImageConfig[]>([]);
+  const [model, setModel] = useState<Konva.ImageConfig>();
   const [tool, setTool] = useState<ToolType>(ToolType.Pen);
   const [selectedShapeId, setSelectedShapeId] = useState<string>();
   const isDrawing = useRef<boolean>(false);
   const draggingImage = useRef<HTMLImageElement>();
   const stageRef = useRef<Konva.Stage>(null);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasLayerRef = useRef<Konva.Layer>(null);
+  const modelRef = useRef<ModelHandlerProps>(null);
 
   useEffect(() => {
-    if (stageRef.current) {
-      stageRef.current.content.tabIndex = 1;
-      stageRef.current.content.style.outline = "none";
-      const handleDelete = (e: KeyboardEvent) => {
-        if (e.key === "Backspace" && selectedShapeId) {
-          deleteImage(selectedShapeId);
-        }
-      };
-      stageRef.current.content.addEventListener("keydown", handleDelete);
-
-      return () => {
-        stageRef.current?.content.removeEventListener("keydown", handleDelete);
-      };
+    if (containerRef.current) {
+      const width = containerRef.current.clientWidth;
+      const height = Math.floor(width / aspectRatio);
+      setRenderedWidth(width);
+      setRenderedHeight(height);
     }
-  }, [stageRef, selectedShapeId]);
+  }, [containerRef]);
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    if (stageRef.current && draggingImage.current) {
+      stageRef.current.setPointersPositions(e);
+      const position = stageRef.current.getPointerPosition();
+      const model: Konva.ImageConfig = {
+        id: String(shapeId++),
+        image: draggingImage.current,
+        ...(position
+          ? {
+              x: position.x - dragOffset.current.x,
+              y: position.y - dragOffset.current.y,
+            }
+          : {}),
+      };
+      setModel(model);
+    }
+  };
+
+  const changeImage = (model: Konva.ImageConfig) => {
+    setModel(model);
+  };
 
   const deleteImage = (shapeId: string) => {
-    const originalImageIndex = images.findIndex(
-      (image) => image.id === shapeId
-    );
-    images.splice(originalImageIndex, 1);
-    setImages([...images]);
+    setModel(undefined);
     setSelectedShapeId(undefined);
   };
 
@@ -152,7 +172,9 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
   };
 
   const handleMouseUp = () => {
-    isDrawing.current = false;
+    if (isDrawing.current) {
+      isDrawing.current = false;
+    }
   };
 
   const changeCanvasWidth = (realWidth: number | null) => {
@@ -183,14 +205,6 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
     setRenderedHeight(renderedHeight);
   };
 
-  const changeImage = (imageConfig: Konva.ImageConfig) => {
-    const originalImageIndex = images.findIndex(
-      (image) => image.id === imageConfig.id
-    );
-    images.splice(originalImageIndex, 1, imageConfig);
-    setImages([...images]);
-  };
-
   const tabs = [
     {
       key: "1",
@@ -202,7 +216,7 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
       label: "牧马人",
       children: (
         <List
-          style={{ maxHeight: "600px", overflow: "auto" }}
+          style={{ maxHeight: "350px", overflow: "auto" }}
           dataSource={jeepWranglers}
           renderItem={(item) => (
             <ImageSelection
@@ -223,9 +237,24 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
   ];
 
   const handleNext = () => {
-    const image = stageRef.current?.toDataURL();
-    if (image) {
-      onNext(image);
+    const modelImage = modelRef.current?.toDataURL();
+    if (modelImage == null) {
+      message.error('请先添加模型！');
+    } else if (stageRef.current && canvasLayerRef.current) {
+      const scale = realWidth / renderedWidth;
+      stageRef.current.scale({ x: scale, y: scale });
+      const canvasImage = canvasLayerRef.current.toDataURL({
+        width: realWidth,
+        height: realHeight,
+      });
+      stageRef.current.scale({ x: 1, y: 1 });
+      
+      onNext({
+        canvas: { data: canvasImage, mimeType: 'image/png' },
+        target: { data: modelImage, mimeType: 'image/png' },
+        width: realWidth,
+        height: realHeight,
+      });
     }
   };
 
@@ -235,29 +264,9 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Row style={{ width: "90%", minWidth: "900px" }} gutter={40}>
           <Col span={16} style={{ borderRight: "1px solid #ccc" }}>
-            <div style={{ display: "flex", justifyContent: 'center' }}>
-              <div>
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    if (stageRef.current && draggingImage.current) {
-                      stageRef.current.setPointersPositions(e);
-                      const position = stageRef.current.getPointerPosition();
-                      const imageConfig: Konva.ImageConfig = {
-                        id: String(shapeId++),
-                        image: draggingImage.current,
-                        ...(position
-                          ? {
-                              x: position.x - dragOffset.current.x,
-                              y: position.y - dragOffset.current.y,
-                            }
-                          : {}),
-                      };
-                      setImages(images.concat(imageConfig));
-                    }
-                  }}
-                >
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div ref={containerRef}>
+                <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
                   <Stage
                     style={{ border: "1px solid #ccc" }}
                     width={renderedWidth}
@@ -268,16 +277,19 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
                     ref={stageRef}
                   >
                     <Layer>
-                      {images.map((imageConfig) => (
-                        <ModelImage
-                          key={imageConfig.id}
-                          imageConfig={imageConfig}
+                      {model && (
+                        <Model
+                          ref={modelRef}
+                          key={model.id}
+                          imageConfig={model}
                           onSelect={(id) => setSelectedShapeId(id)}
-                          isSelected={selectedShapeId === imageConfig.id}
+                          isSelected={selectedShapeId === model.id}
                           onChange={changeImage}
                           onDelete={(shapeId) => deleteImage(shapeId)}
                         />
-                      ))}
+                      )}
+                    </Layer>
+                    <Layer ref={canvasLayerRef}>
                       {lines.map((line, i) => (
                         <Line
                           key={i}
