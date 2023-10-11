@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 
 interface Response<Data> {
@@ -20,9 +21,11 @@ class ApiRequest {
       if (response && response.data && response.data.code === 200) {
         return response.data.data;
       } else {
+        message.error(`系统异常-${response?.data?.code}`);
         throw new AxiosError('API error', response?.data?.code.toString(), response?.config, response?.request, response || undefined);
       }
     }).catch((error) => {
+      message.error(`系统出错了`);
       if (!axios.isCancel(error)) {
         throw error;
       }
