@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useRecoilState } from 'recoil';
-import Edit from './Edit';
+import Edit, { EditProps } from './Edit';
 import Result from './Result';
 import apiRequest from '../../utils/request';
 import { ImageInfo } from '../../utils/image';
@@ -17,7 +17,7 @@ const GeneratePoster: React.FC = () => {
   const abortController = useRef<AbortController>();
   const [processing, setProcessing] = useRecoilState(processingState);
 
-  const toPreview = async (data: { canvas: ImageInfo; target: ImageInfo; width: number; height: number }) => {
+  const toPreview: EditProps['onNext'] = async (data) => {
     abortController.current = new AbortController();
     try {
       setProcessing({ show: true });
@@ -29,6 +29,7 @@ const GeneratePoster: React.FC = () => {
           image: data.target.data,
           width: data.width,
           height: data.height,
+          scene: data.scene,
         },
         signal: abortController.current.signal,
       });

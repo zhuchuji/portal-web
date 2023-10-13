@@ -4,7 +4,7 @@ module.exports = function(app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://home.idyer.top:9090',
+      target: 'http://dunnzhou.tpddns.cn:9090',
       changeOrigin: true,
     })
   );

@@ -12,6 +12,7 @@ import {
   Col,
   Button,
   message,
+  Typography,
 } from "antd";
 import Title from "../../components/Title";
 import ImageSelection from "../../components/ImageSelection";
@@ -26,6 +27,7 @@ import jeepWrangler6 from "./images/jeep-wrangler-6.png";
 import jeepWrangler7 from "./images/jeep-wrangler-7.png";
 import jeepWrangler8 from "./images/jeep-wrangler-8.png";
 import { ImageInfo } from "../../utils/image";
+import scene1 from "./images/scene_1.jpg";
 
 enum ToolType {
   Pen,
@@ -71,14 +73,23 @@ const jeepWranglers = [
   },
 ];
 
+const scenes = [
+  {
+    imageUrl: scene1,
+    name: "夜景灯光",
+    id: 1,
+  },
+];
+
 let shapeId = 0;
 
-interface EditProps {
+export interface EditProps {
   onNext: (data: {
     canvas: ImageInfo;
     target: ImageInfo;
     width: number;
     height: number;
+    scene: number;
   }) => void;
 }
 
@@ -99,6 +110,7 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasLayerRef = useRef<Konva.Layer>(null);
   const modelRef = useRef<ModelHandlerProps>(null);
+  const [selectedScene, setSelectedScene] = useState<number>(scenes[0].id);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -236,10 +248,35 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
     },
   ];
 
+  const sceneTabs = [
+    {
+      key: "1",
+      label: "场景选择",
+      children: (
+        <List
+          style={{ maxHeight: "350px", overflow: "auto" }}
+          grid={{ column: 2 }}
+          dataSource={scenes}
+          renderItem={(item) => (
+            <div key={item.id} style={{ margin: "10px" }}>
+              <ImageSelection
+                style={{ margin: 0 }}
+                src={item.imageUrl}
+                selected={selectedScene === item.id}
+                onClick={() => setSelectedScene(item.id)}
+              />
+              <Typography.Paragraph>{item.name}</Typography.Paragraph>
+            </div>
+          )}
+        />
+      ),
+    },
+  ];
+
   const handleNext = () => {
     const modelImage = modelRef.current?.toDataURL();
     if (modelImage == null) {
-      message.error('请先添加模型！');
+      message.error("请先添加模型！");
     } else if (stageRef.current && canvasLayerRef.current) {
       const scale = realWidth / renderedWidth;
       stageRef.current.scale({ x: scale, y: scale });
@@ -248,12 +285,13 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
         height: realHeight,
       });
       stageRef.current.scale({ x: 1, y: 1 });
-      
+
       onNext({
-        canvas: { data: canvasImage, mimeType: 'image/png' },
-        target: { data: modelImage, mimeType: 'image/png' },
+        canvas: { data: canvasImage, mimeType: "image/png" },
+        target: { data: modelImage, mimeType: "image/png" },
         width: realWidth,
         height: realHeight,
+        scene: selectedScene,
       });
     }
   };
@@ -369,9 +407,15 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
             <p>添加指定元素并拖动到想要的位置</p>
             <Tabs
               style={{ border: "1px solid #ccc" }}
-              tabBarStyle={{ padding: '0 20px' }}
+              tabBarStyle={{ padding: "0 20px" }}
               items={tabs}
               defaultActiveKey={tabs[1].key}
+            />
+            <Tabs
+              style={{ marginTop: '20px', border: "1px solid #ccc" }}
+              tabBarStyle={{ padding: "0 20px" }}
+              items={sceneTabs}
+              defaultActiveKey={sceneTabs[0].key}
             />
           </Col>
         </Row>

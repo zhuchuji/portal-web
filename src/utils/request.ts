@@ -25,8 +25,8 @@ class ApiRequest {
         throw new AxiosError('API error', response?.data?.code.toString(), response?.config, response?.request, response || undefined);
       }
     }).catch((error) => {
-      message.error(`系统出错了`);
       if (!axios.isCancel(error)) {
+        message.error(`系统出错了`);
         throw error;
       }
     });
