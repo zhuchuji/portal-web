@@ -1,7 +1,6 @@
 import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import Konva from "konva";
 import { Image, Transformer, Group, Text } from "react-konva";
-import { message } from "antd";
 
 export interface ModelHandlerProps {
   toDataURL: () => string | undefined;
@@ -45,26 +44,6 @@ const Model = forwardRef<ModelHandlerProps, ModelProps>(({
 
   return (
     <Group>
-      {isSelected && (
-        <Text
-          text="x"
-          fontSize={20}
-          fill="#ccc"
-          x={
-            (imageConfig.x || 0) +
-            ((imageConfig.image as HTMLImageElement).width || 0) +
-            10
-          }
-          y={(imageConfig.y || 0) - 30}
-          onClick={() => {
-            if (imageConfig.id) {
-
-
-              onDelete(imageConfig.id);
-            }
-          }}
-        />
-      )}
       <Image
         {...imageConfig}
         onMouseDown={() => onSelect(imageConfig.id)}
@@ -111,6 +90,20 @@ const Model = forwardRef<ModelHandlerProps, ModelProps>(({
               return oldBox;
             }
             return newBox;
+          }}
+        />
+      )}
+      {isSelected && (
+        <Text
+          text="x"
+          fontSize={20}
+          fill="#ccc"
+          x={(imageConfig.x || 0) + (imageConfig.width || shapeRef.current?.width() || 0) + 10}
+          y={(imageConfig.y || 0) - 30}
+          onClick={() => {
+            if (imageConfig.id) {
+              onDelete(imageConfig.id);
+            }
           }}
         />
       )}

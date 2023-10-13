@@ -264,7 +264,7 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Row style={{ width: "90%", minWidth: "900px" }} gutter={40}>
           <Col span={16} style={{ borderRight: "1px solid #ccc" }}>
-            <div style={{ display: "flex", justifyContent: "center" }}>
+            <div>
               <div ref={containerRef}>
                 <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
                   <Stage
@@ -369,6 +369,7 @@ const Edit: React.FC<EditProps> = ({ onNext }) => {
             <p>添加指定元素并拖动到想要的位置</p>
             <Tabs
               style={{ border: "1px solid #ccc" }}
+              tabBarStyle={{ padding: '0 20px' }}
               items={tabs}
               defaultActiveKey={tabs[1].key}
             />

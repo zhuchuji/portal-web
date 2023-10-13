@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
+import { useRecoilState } from 'recoil';
 import Edit from './Edit';
 import Result from './Result';
 import apiRequest from '../../utils/request';
 import { ImageInfo } from '../../utils/image';
 import Processing from '../../components/Processing';
+import processingState from '../../state/processing';
 
 enum Process {
   Edit,
@@ -12,13 +14,13 @@ enum Process {
 const GeneratePoster: React.FC = () => {
   const [process, setProcess] = useState<Process>(Process.Edit);
   const [generatedImages, setGeneratedImages] = useState<ImageInfo[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const abortController = useRef<AbortController>();
+  const [processing, setProcessing] = useRecoilState(processingState);
 
   const toPreview = async (data: { canvas: ImageInfo; target: ImageInfo; width: number; height: number }) => {
     abortController.current = new AbortController();
     try {
-      setLoading(true);
+      setProcessing({ show: true });
       const res = await apiRequest.request<string[]>({
         method: 'post',
         url: '/api/v1/txt2img',
@@ -38,12 +40,12 @@ const GeneratePoster: React.FC = () => {
         setProcess(Process.Generate);
       }
     } finally {
-      setLoading(false);
+      setProcessing({ show: false });
     }
   };
 
   const cancelProcessing = () => {
-    setLoading(false);
+    setProcessing({ show: false });
     if (abortController.current) {
       abortController.current.abort();
       abortController.current = undefined;
@@ -65,7 +67,7 @@ const GeneratePoster: React.FC = () => {
           }}
         />
       )}
-      {loading  && <Processing open={loading} onCancel={cancelProcessing} />}
+      <Processing open={processing.show} onCancel={cancelProcessing} />
     </div>
   );
 };
